@@ -34,7 +34,9 @@ ATC_SOURCED_LABELS = {
     "SD Percentage", "LD Percentage per Week", "Max LD Percentage", "Courier Address", "MAF Required",
     "Price Reduction Schedule (PRS)", "Price Reduction Schedule", "PRS",
     "maf_required", "sd_mode", "sd_required", "sd_percentage", "sd_duration", "ld_percentage_per_week",
-    "max_ld_percentage", "payment_terms_supply_percent", "payment_terms_installation_percent"
+    "max_ld_percentage", "payment_terms_supply_percent", "payment_terms_installation_percent",
+    "Pre-Bid Meeting", "pre_bid_meeting", "Site Visit", "site_visit", "Sample Submission", "sample_submission",
+    "MII Purchase Preference", "mii_purchase_preference", "mii_preference"
 }
 
 MAIN_SOURCED_LABELS = {
@@ -70,6 +72,10 @@ def _find_atc_anchor_citation(key: str, atc_page_texts: List[Dict[str, Any]]) ->
         "delivery_time_supply": [r"delivery\s+time", r"contract\s+period", r"delivery\s+period", r"delivery"],
         "client_contacts": [r"contact\s+person", r"nodal\s+officer", r"email", r"telephone", r"phone"],
         "courier_address": [r"courier\s+address", r"postal\s+address", r"consignee\s+address", r"address"],
+        "pre_bid_meeting": [r"pre[\s\-]?bid\s+meeting", r"pre[\s\-]?bid\s+conference", r"pre[\s\-]?bid"],
+        "site_visit": [r"site\s+visit", r"site\s+inspection", r"visit\s+to\s+site", r"site\s+survey"],
+        "sample_submission": [r"sample\s+submission", r"submission\s+of\s+samples?", r"sample\s+testing", r"advance\s+sample", r"prototype\s+sample"],
+        "mii_preference": [r"make\s+in\s+india", r"mii\s+purchase\s+preference", r"local\s+content"],
     }
     key_patterns = patterns.get(key, [re.escape(key.replace("_", " "))])
     for page in atc_page_texts:

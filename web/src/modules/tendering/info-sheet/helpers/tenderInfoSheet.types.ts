@@ -71,6 +71,7 @@ export interface SaveTenderInfoSheetDto {
     physicalDocsRequired: 'YES' | 'NO' | null;
     physicalDocType: string | null;
     physicalDocsDeadline: string | null;
+    preBidMeeting: string | null;
 
     techEligibilityAge: number | null;
     workValueType: 'WORKS_VALUES' | 'CUSTOM' | null;
@@ -162,6 +163,7 @@ export interface TenderInfoSheetResponse {
     physicalDocsRequired: 'YES' | 'NO' | null;
     physicalDocType: string | null | undefined;
     physicalDocsDeadline: string | Date | null;
+    preBidMeeting: string | null;
 
     techEligibilityAge: number | null;
     oemExperience: 'YES' | 'NO' | null;

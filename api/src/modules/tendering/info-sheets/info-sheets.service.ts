@@ -512,6 +512,9 @@ export class TenderInfoSheetsService {
                         physicalDocType: isRejection
                             ? null
                             : (payload.physicalDocType ?? null),
+                        preBidMeeting: isRejection
+                            ? null
+                            : (payload.preBidMeeting ?? null),
                         techEligibilityAge: isRejection
                             ? null
                             : (payload.techEligibilityAge ?? null),
@@ -944,6 +947,9 @@ export class TenderInfoSheetsService {
                         physicalDocType: isRejection
                             ? null
                             : (payload.physicalDocType ?? null),
+                        preBidMeeting: isRejection
+                            ? null
+                            : (payload.preBidMeeting ?? null),
                         techEligibilityAge: isRejection
                             ? null
                             : (payload.techEligibilityAge ?? null),

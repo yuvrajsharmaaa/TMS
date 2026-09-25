@@ -66,6 +66,7 @@ export const EXTRACTION_TO_FORM_FIELD_MAP: Record<string, keyof TenderInfoSheetF
     maxLdPercentage: 'maxLdPercentage',
     physicalDocsRequired: 'physicalDocsRequired',
     physicalDocsDeadline: 'physicalDocsDeadline',
+    preBidMeeting: 'preBidMeeting',
     orderValue1: 'orderValue1',
     orderValue2: 'orderValue2',
     orderValue3: 'orderValue3',
@@ -476,6 +477,11 @@ export function populateFormFromExtraction(
     }
     if (fields.physicalDocsDeadline?.value) {
         setField('physicalDocsDeadline', String(fields.physicalDocsDeadline.value));
+    }
+
+    // ─── 11b. Pre-Bid Meeting ───────────────────────────────────────────────
+    if (fields.preBidMeeting?.value) {
+        setField('preBidMeeting', String(fields.preBidMeeting.value));
     }
 
     // ─── 12. Work Values & Tech Eligibility ─────────────────────────────────

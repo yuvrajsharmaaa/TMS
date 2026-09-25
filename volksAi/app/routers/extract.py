@@ -78,6 +78,29 @@ TMS_TO_SOURCE_KEY_MAP: Dict[str, str] = {
     "physicalDocsRequired": "physical_docs_required_display",
     "physicalDocsDeadline": "physical_docs_deadline_display",
 
+    # Before-Bidding Requirements
+    "preBidMeeting": "pre_bid_meeting_display",
+    "siteVisit": "site_visit_display",
+    "siteVisitRequired": "site_visit_display",
+    "sampleSubmission": "sample_submission_display",
+    "sampleSubmissionRequired": "sample_submission_display",
+
+    # Make in India (MII)
+    "miiPreference": "mii_preference_display",
+    "miiRequired": "mii_preference_display",
+
+    # Seller Required Documents
+    "requiredDocuments": "doc_1_display",
+    "doc1": "doc_1_display",
+    "doc2": "doc_2_display",
+    "doc3": "doc_3_display",
+    "doc4": "doc_4_display",
+    "doc5": "doc_5_display",
+    "doc6": "doc_6_display",
+    "doc7": "doc_7_display",
+    "doc8": "doc_8_display",
+    "doc9": "doc_9_display",
+
     # BEC Financial & Work Orders
     "orderValue1": "order_value_1_display",
     "orderValue2": "order_value_2_display",
@@ -133,7 +156,8 @@ def _normalize_extracted_value_for_key(tms_key: str, raw_val: Any) -> Any:
         return parsed if parsed is not None else s
 
     bool_keys = {
-        "reverseAuctionApplicable", "deliveryTimeInstallationInclusive", "physicalDocsRequired"
+        "reverseAuctionApplicable", "deliveryTimeInstallationInclusive", "physicalDocsRequired",
+        "siteVisitRequired", "sampleSubmissionRequired", "miiRequired"
     }
     if tms_key in bool_keys:
         s_lower = s.lower()

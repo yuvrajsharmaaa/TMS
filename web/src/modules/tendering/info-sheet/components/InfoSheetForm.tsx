@@ -1425,6 +1425,30 @@ export function TenderInformationForm({
                                             </>
                                         )}
 
+                                        {/* Pre-Bid Meeting */}
+                                        <div>
+                                            <FieldWrapper
+                                                control={form.control}
+                                                name="preBidMeeting"
+                                                label="Pre-Bid Meeting Details"
+                                            >
+                                                {(field) => (
+                                                    <textarea
+                                                        className="border-input placeholder:text-muted-foreground h-24 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                                                        placeholder="Date & time, venue, MS Teams ID / passcode..."
+                                                        maxLength={2000}
+                                                        {...field}
+                                                        value={field.value ?? ''}
+                                                    />
+                                                )}
+                                            </FieldWrapper>
+                                            {getIncompleteFieldComment('preBidMeeting') && (
+                                                <IncompleteFieldAlert
+                                                    comment={getIncompleteFieldComment('preBidMeeting')!}
+                                                />
+                                            )}
+                                        </div>
+
                                         {/* Eligibility */}
                                         <div>
                                             <FieldWrapper
