@@ -9,6 +9,7 @@ export interface TenderClientDto {
     clientName: string;
     clientDesignation: string | null;
     clientMobile: string | null;
+    
     clientEmail: string | null;
 }
 
@@ -72,6 +73,8 @@ export interface SaveTenderInfoSheetDto {
     physicalDocType: string | null;
     physicalDocsDeadline: string | null;
     preBidMeeting: string | null;
+    siteVisit: string | null;
+    sampleSubmission: string | null;
 
     techEligibilityAge: number | null;
     workValueType: 'WORKS_VALUES' | 'CUSTOM' | null;
@@ -164,6 +167,8 @@ export interface TenderInfoSheetResponse {
     physicalDocType: string | null | undefined;
     physicalDocsDeadline: string | Date | null;
     preBidMeeting: string | null;
+    siteVisit: string | null;
+    sampleSubmission: string | null;
 
     techEligibilityAge: number | null;
     oemExperience: 'YES' | 'NO' | null;

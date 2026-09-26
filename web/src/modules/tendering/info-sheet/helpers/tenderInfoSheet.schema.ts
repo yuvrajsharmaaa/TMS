@@ -103,6 +103,12 @@ export const TenderInformationFormSchema = z.object({
     // Pre-Bid Meeting (free text: date/time, venue, MS Teams details)
     preBidMeeting: z.string().max(2000).optional(),
 
+    // Site Visit / Survey (free text: mandatory/deemed/advisory + details)
+    siteVisit: z.string().max(2000).optional(),
+
+    // Sample Submission / Testing (free text: requirement + qty/deadline/lab details)
+    sampleSubmission: z.string().max(2000).optional(),
+
     // Technical Eligibility
     techEligibilityAgeYears: z.coerce
         .number()

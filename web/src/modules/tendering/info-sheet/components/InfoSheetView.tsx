@@ -671,6 +671,26 @@ const AllFieldsTable = ({ infoSheet }: { infoSheet: TenderInfoSheet }) => {
                     </TableCell>
                 </TableRow>
 
+                {/* Site Visit */}
+                <TableRow className="hover:bg-muted/30 transition-colors">
+                    <TableCell className="text-sm font-medium text-muted-foreground">
+                        Site Visit
+                    </TableCell>
+                    <TableCell className="text-sm whitespace-normal [overflow-wrap:anywhere]" colSpan={3}>
+                        {infoSheet.siteVisit || "—"}
+                    </TableCell>
+                </TableRow>
+
+                {/* Sample Submission */}
+                <TableRow className="hover:bg-muted/30 transition-colors">
+                    <TableCell className="text-sm font-medium text-muted-foreground">
+                        Sample Submission
+                    </TableCell>
+                    <TableCell className="text-sm whitespace-normal [overflow-wrap:anywhere]" colSpan={3}>
+                        {infoSheet.sampleSubmission || "—"}
+                    </TableCell>
+                </TableRow>
+
                 {/* Client Contacts */}
                 {infoSheet.clients && infoSheet.clients.length > 0 ? (
                     <>

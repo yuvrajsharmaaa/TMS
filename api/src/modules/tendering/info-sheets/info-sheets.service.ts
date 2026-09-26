@@ -515,6 +515,12 @@ export class TenderInfoSheetsService {
                         preBidMeeting: isRejection
                             ? null
                             : (payload.preBidMeeting ?? null),
+                        siteVisit: isRejection
+                            ? null
+                            : (payload.siteVisit ?? null),
+                        sampleSubmission: isRejection
+                            ? null
+                            : (payload.sampleSubmission ?? null),
                         techEligibilityAge: isRejection
                             ? null
                             : (payload.techEligibilityAge ?? null),
@@ -950,6 +956,12 @@ export class TenderInfoSheetsService {
                         preBidMeeting: isRejection
                             ? null
                             : (payload.preBidMeeting ?? null),
+                        siteVisit: isRejection
+                            ? null
+                            : (payload.siteVisit ?? null),
+                        sampleSubmission: isRejection
+                            ? null
+                            : (payload.sampleSubmission ?? null),
                         techEligibilityAge: isRejection
                             ? null
                             : (payload.techEligibilityAge ?? null),

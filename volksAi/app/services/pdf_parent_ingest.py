@@ -96,6 +96,43 @@ def _find_atc_anchor_citation(key: str, atc_page_texts: List[Dict[str, Any]]) ->
     return first_p, ""
 
 
+def build_page_tagged_text(
+    page_texts: List[Dict[str, Any]],
+    atc_page_texts: Optional[List[Dict[str, Any]]] = None,
+) -> str:
+    """
+    Read-only consumer of already-computed page_texts / atc_page_texts (the same
+    per-page dicts produced by extract_pdf_text_hybrid(), each carrying at least
+    "page" and "text"): assembles a single string with each page's text labeled
+    by document and page number, e.g. "[Main Page 1]: ...", "[ATC Page 3]: ...",
+    for feeding into a page-aware LLM call that needs to cite its source page.
+
+    Does NOT mutate page_texts, atc_page_texts, or any caller state -- this is a
+    new, standalone utility alongside the existing ingestion pipeline, not a
+    change to it. Works with main-document-only input when atc_page_texts is
+    empty or None (no ATC document for the tender).
+    """
+    parts: List[str] = []
+
+    for p in (page_texts or []):
+        if not isinstance(p, dict):
+            continue
+        page_num = p.get("page", p.get("page_number", 1))
+        text = (p.get("text") or "").strip()
+        if text:
+            parts.append(f"[Main Page {page_num}]: {text}")
+
+    for p in (atc_page_texts or []):
+        if not isinstance(p, dict):
+            continue
+        page_num = p.get("page", p.get("page_number", 1))
+        text = (p.get("text") or "").strip()
+        if text:
+            parts.append(f"[ATC Page {page_num}]: {text}")
+
+    return "\n\n".join(parts)
+
+
 def _collect_field_snapshots(sections_list: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
     """
     Builds a lookup map from field labels, field_names, and IDs to

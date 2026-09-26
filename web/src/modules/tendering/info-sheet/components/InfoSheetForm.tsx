@@ -1449,6 +1449,54 @@ export function TenderInformationForm({
                                             )}
                                         </div>
 
+                                        {/* Site Visit / Survey */}
+                                        <div>
+                                            <FieldWrapper
+                                                control={form.control}
+                                                name="siteVisit"
+                                                label="Site Visit / Survey Requirement"
+                                            >
+                                                {(field) => (
+                                                    <textarea
+                                                        className="border-input placeholder:text-muted-foreground h-24 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                                                        placeholder="Mandatory / deemed / advisory details, certificate requirements, deadline..."
+                                                        maxLength={2000}
+                                                        {...field}
+                                                        value={field.value ?? ''}
+                                                    />
+                                                )}
+                                            </FieldWrapper>
+                                            {getIncompleteFieldComment('siteVisit') && (
+                                                <IncompleteFieldAlert
+                                                    comment={getIncompleteFieldComment('siteVisit')!}
+                                                />
+                                            )}
+                                        </div>
+
+                                        {/* Sample Submission / Testing */}
+                                        <div>
+                                            <FieldWrapper
+                                                control={form.control}
+                                                name="sampleSubmission"
+                                                label="Sample Submission / Testing Requirement"
+                                            >
+                                                {(field) => (
+                                                    <textarea
+                                                        className="border-input placeholder:text-muted-foreground h-24 w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                                                        placeholder="Submission timeline, sample quantity, testing lab/charges..."
+                                                        maxLength={2000}
+                                                        {...field}
+                                                        value={field.value ?? ''}
+                                                    />
+                                                )}
+                                            </FieldWrapper>
+                                            {getIncompleteFieldComment('sampleSubmission') && (
+                                                <IncompleteFieldAlert
+                                                    comment={getIncompleteFieldComment('sampleSubmission')!}
+                                                />
+                                            )}
+                                        </div>
+
                                         {/* Eligibility */}
                                         <div>
                                             <FieldWrapper

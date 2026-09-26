@@ -67,6 +67,8 @@ export const EXTRACTION_TO_FORM_FIELD_MAP: Record<string, keyof TenderInfoSheetF
     physicalDocsRequired: 'physicalDocsRequired',
     physicalDocsDeadline: 'physicalDocsDeadline',
     preBidMeeting: 'preBidMeeting',
+    siteVisit: 'siteVisit',
+    sampleSubmission: 'sampleSubmission',
     orderValue1: 'orderValue1',
     orderValue2: 'orderValue2',
     orderValue3: 'orderValue3',
@@ -479,9 +481,15 @@ export function populateFormFromExtraction(
         setField('physicalDocsDeadline', String(fields.physicalDocsDeadline.value));
     }
 
-    // ─── 11b. Pre-Bid Meeting ───────────────────────────────────────────────
+    // ─── 11b. Before-Bidding Requirements ───────────────────────────────────
     if (fields.preBidMeeting?.value) {
         setField('preBidMeeting', String(fields.preBidMeeting.value));
+    }
+    if (fields.siteVisit?.value) {
+        setField('siteVisit', String(fields.siteVisit.value));
+    }
+    if (fields.sampleSubmission?.value) {
+        setField('sampleSubmission', String(fields.sampleSubmission.value));
     }
 
     // ─── 12. Work Values & Tech Eligibility ─────────────────────────────────
