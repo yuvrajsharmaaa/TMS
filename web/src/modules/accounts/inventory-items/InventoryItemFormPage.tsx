@@ -13,8 +13,9 @@ import { useCreateInventoryItem, useInventoryItem, useItemConversionOptions, use
 import { handleQueryError } from "@/lib/react-query";
 import { paths } from "@/app/routes/paths";
 import type { InventoryItemPayload } from "@/types/inventory-item.types";
-import { ITEM_CATALOG, fieldIsVisible, findCatalogItem, UNIT_OPTIONS, type Unit } from "./item-catalog.ts";
-import { generateTemplatedItemCode, getItemCodePreview } from "./item-code-generator.ts";
+import { ITEM_CATALOG, fieldIsVisible, findCatalogItem, getItemMainCategory } from "./item-catalog";
+import { UNIT_OPTIONS, type Unit } from "./item-config";
+import { generateTemplatedItemCode, getItemCodePreview } from "./item-code-generator";
 import { inventoryItemFormSchema, type InventoryItemFormValues } from "./item-form-schema";
 
 const formControlClass = "h-11 w-full rounded-md border border-slate-400 bg-background px-3 text-sm text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:border-slate-600 md:h-10";
@@ -29,7 +30,7 @@ export default function InventoryItemFormPage() {
     const navigate = useNavigate();
     const form = useForm<InventoryItemFormValues>({
         resolver: zodResolver(inventoryItemFormSchema) as never,
-        defaultValues: { category: "", itemName: "", itemType: "", specifications: {}, makeBrand: "", description: "", unit: "Nos.", conversionEnabled: false, conversionUnit: "", conversionFactor: "", hsnCode: "", isActive: true },
+        defaultValues: { category: "", subcategory: "", itemName: "", itemType: "", specifications: {}, makeBrand: "", modelNumber: "", description: "", unit: "Nos.", conversionEnabled: false, conversionUnit: "", conversionFactor: "", hsnCode: "", isActive: true },
     });
     const { data: item, isLoading: itemLoading, error: itemError, refetch } = useInventoryItem("master", itemId);
     const createItem = useCreateInventoryItem();
@@ -59,13 +60,14 @@ export default function InventoryItemFormPage() {
     const conversionOptions = conversionOptionsQuery.data || [];
     const selectedConversion = conversionOptions.find(option => option.to === conversionUnit);
     const saving = createItem.isPending || updateItem.isPending;
+    const conversionApplicable = !["Nos.", "Litre", "Pair", "Set"].includes(unit);
 
     useEffect(() => {
         if (isEdit) {
             if (!item || initializedForm.current === `edit-${itemId}`) return;
             form.reset({
-                category: item.category || "Legacy", itemName: item.itemName, itemType: item.itemType || "",
-                specifications: item.specifications || {}, makeBrand: item.makeBrand || "", description: item.description || "",
+                category: getItemMainCategory(item.itemName, item.category), subcategory: "", itemName: item.itemName, itemType: item.itemType || "",
+                specifications: item.specifications || {}, makeBrand: item.makeBrand || "", modelNumber: item.modelNumber || "", description: item.description || "",
                 unit: item.unit as Unit, conversionEnabled: Boolean(item.conversionUnit), conversionUnit: item.conversionUnit || "",
                 conversionFactor: item.conversionFactor || "", hsnCode: item.hsnCode || "", isActive: item.isActive,
             });
@@ -75,7 +77,7 @@ export default function InventoryItemFormPage() {
             setUnitChangedNotice(false);
         } else if (initializedForm.current !== "new") {
             form.reset({
-                category: "", itemName: "", itemType: "", specifications: {}, makeBrand: "", description: "", unit: "Nos.", conversionEnabled: false,
+                category: "", subcategory: "", itemName: "", itemType: "", specifications: {}, makeBrand: "", modelNumber: "", description: "", unit: "Nos.", conversionEnabled: false,
                 conversionUnit: "", conversionFactor: "", hsnCode: "", isActive: true,
             });
             lastWidth.current = "";
@@ -176,7 +178,7 @@ export default function InventoryItemFormPage() {
             }
             const typeField = catalogItem?.fields.find(field => field.listColumn === "type");
             const payload: InventoryItemPayload = {
-                category: values.category, itemName: values.itemName,
+                category: values.category, subcategory: values.subcategory || null, modelNumber: values.modelNumber?.trim() || null, itemName: values.itemName,
                 itemType: typeField ? values.specifications[typeField.key] || null : values.itemType.trim() || null,
                 makeBrand: values.makeBrand.trim() || null,
                 specifications: values.specifications, description: values.description.trim() || null,
@@ -250,7 +252,7 @@ export default function InventoryItemFormPage() {
                             if (selected?.defaultUnit) form.setValue("unit", selected.defaultUnit as Unit, { shouldDirty: true });
                         } })}>
                             <option value="">Select item name</option>
-                            {category && <optgroup label={category.name}>{category.items.map(option => <option key={option.name} value={option.name}>{option.name}</option>)}</optgroup>}
+                            {category && <optgroup label={category.name}>{category.items.map(option => <option key={option.name} value={option.name} disabled={option.pending}>{option.pending ? `${option.name} (pending finalization)` : option.name}</option>)}</optgroup>}
                         </select>}
                     </FormField>
                     {catalogItem?.legacyTypes && <FormField label="Type" helper="Select the legacy item type." error={errors.itemType?.message}>
@@ -301,7 +303,7 @@ export default function InventoryItemFormPage() {
             <section className={sectionClass}>
                 <div><h2 className="font-semibold">Unit conversion (optional)</h2><p className="text-sm text-muted-foreground">Enable only when this item needs a second unit.</p></div>
                 <label className="flex min-h-11 items-center gap-3 text-sm">
-                    <input type="checkbox" className="h-5 w-5" disabled={unit === "Nos." && !conversionEnabled} {...form.register("conversionEnabled", { onChange: event => {
+                    <input type="checkbox" className="h-5 w-5" disabled={!conversionApplicable && !conversionEnabled} {...form.register("conversionEnabled", { onChange: event => {
                         if (!event.target.checked) {
                             form.setValue("conversionUnit", "", { shouldDirty: true });
                             form.setValue("conversionFactor", "", { shouldDirty: true });
@@ -309,7 +311,7 @@ export default function InventoryItemFormPage() {
                         }
                     } })} />
                     Add unit conversion
-                    {unit === "Nos." && <span className="text-xs text-muted-foreground">Not applicable for Nos.</span>}
+                    {!conversionApplicable && <span className="text-xs text-muted-foreground">Not applicable for {unit}.</span>}
                 </label>
                 {conversionEnabled && <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
@@ -326,7 +328,7 @@ export default function InventoryItemFormPage() {
                         : selectedConversion?.factorMode === "width" ? "Calculated from width." : selectedConversion?.factorMode === "fixed" ? "Fixed by the unit conversion rule." : "Enter a positive factor with up to 6 decimals."} error={errors.conversionFactor?.message}>
                         <Input type="number" inputMode="decimal" min="0" step={selectedConversion?.factorMode === "manual" ? "0.000001" : "any"} className={formControlClass} aria-invalid={Boolean(errors.conversionFactor)} readOnly={selectedConversion?.factorMode !== "manual"} {...form.register("conversionFactor")} />
                     </FormField>}
-                </div>
+                </div>}
                 {conversionEnabled && conversionUnit && conversionOptionsQuery.isLoading && <p className="text-sm text-muted-foreground">Loading valid conversions…</p>}
                 {conversionEnabled && conversionUnit && conversionOptionsQuery.error && <Alert variant="destructive"><AlertDescription>Unable to load conversion rules. Retry by changing the unit.</AlertDescription></Alert>}
                 {conversionEnabled && conversionUnit && !conversionOptionsQuery.isLoading && !selectedConversion && <Alert variant="destructive"><AlertDescription>This saved conversion pair is invalid. Choose a valid target.</AlertDescription></Alert>}
@@ -341,6 +343,9 @@ export default function InventoryItemFormPage() {
                 <div><h2 className="font-semibold">Make/Brand</h2><p className="text-sm text-muted-foreground">Optional manufacturer or brand.</p></div>
                 <FormField label="Make/Brand" helper="Optional. Up to 120 characters." error={errors.makeBrand?.message}>
                     <Input maxLength={120} className={formControlClass} aria-invalid={Boolean(errors.makeBrand)} {...form.register("makeBrand")} />
+                </FormField>
+                <FormField label="Model Number" helper="Optional. Up to 120 characters." error={errors.modelNumber?.message}>
+                    <Input maxLength={120} className={formControlClass} aria-invalid={Boolean(errors.modelNumber)} {...form.register("modelNumber")} />
                 </FormField>
             </section>
 

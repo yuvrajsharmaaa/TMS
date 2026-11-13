@@ -22,7 +22,7 @@ export const useItemConversionOptions = (unit: string, width?: string, enabled =
     useQuery({
         queryKey: [...inventoryItemsKey, "conversion-options", unit, width],
         queryFn: () => inventoryItemsService.master.getConversionOptions(unit, width),
-        enabled: enabled && Boolean(unit) && unit !== "Nos.",
+        enabled: enabled && Boolean(unit) && !["Nos.", "Litre", "Pair", "Set"].includes(unit),
     });
 
 const useItemMutation = (action: (data: InventoryItemPayload) => Promise<InventoryItem>, message: string, includeCode = false) => {
@@ -30,6 +30,7 @@ const useItemMutation = (action: (data: InventoryItemPayload) => Promise<Invento
     return useMutation({
         mutationFn: action,
         onSuccess: item => { void client.invalidateQueries({ queryKey: itemListKey }); toast.success(includeCode ? `${message}: ${item.itemCode}` : message); },
+        onError: error => toast.error(handleQueryError(error)),
     });
 };
 
@@ -39,6 +40,7 @@ export const useUpdateInventoryItem = () => {
     return useMutation({
         mutationFn: ({ id, data }: { id: number; data: Partial<InventoryItemPayload> }) => inventoryItemsService.master.update(id, data),
         onSuccess: () => { void client.invalidateQueries({ queryKey: itemListKey }); toast.success("Item updated successfully"); },
+        onError: error => toast.error(handleQueryError(error)),
     });
 };
 export const useDeleteInventoryItem = () => {
