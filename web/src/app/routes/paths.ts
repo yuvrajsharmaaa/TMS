@@ -535,6 +535,7 @@ export const paths = {
         },
 
         officeInventory: "/hrms/office-inventory",
+        recruitment: "/hrms/recruitment",
         
         //================ onboarding  ==============================//
         onboardingDashboard: "/hrms/onboarding/dashboard",

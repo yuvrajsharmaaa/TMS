@@ -147,7 +147,7 @@ export const navMain: NavGroup[] = [
         title: "HRMS",
         icon: Shield,
         items: [
-            // { title: "Recruitment", url: "", permission: "hrms.admin" },
+            { title: "Recruitment", url: paths.hrms.recruitment, permission: "hrms.admin" },
             { title: "Onboarding", url: paths.hrms.onboardingDashboard, permission: "hrms.admin" },
             { title: "Induction", url: paths.hrms.inductionDashboard, permission: "hrms.admin" },
             { title: "Assets", url: "/hrms/admin/assets", permission: "hrms.admin" },
