@@ -122,6 +122,25 @@ export function calculateDaysOpen(startDateIso: string, status?: string): number
 }
 
 /**
+ * Calculates filled and open seat counts for a vacancy based on joined candidates (or status === 'Filled').
+ */
+export function getVacancySeatSummary(
+    vacancy: Pick<Vacancy, "id" | "totalVacancies" | "status">,
+    candidates: Array<Pick<Candidate, "vacancyId" | "currentStatus">>
+): { filledSeats: number; totalSeats: number; openSeats: number } {
+    const totalSeats = Math.max(1, vacancy.totalVacancies || 1);
+    const joinedForVacancy = candidates.filter(
+        c => c.vacancyId === vacancy.id && c.currentStatus === "Joined"
+    ).length;
+    const filledSeats =
+        vacancy.status === "Filled"
+            ? Math.max(totalSeats, joinedForVacancy)
+            : Math.min(totalSeats, joinedForVacancy);
+    const openSeats = Math.max(0, totalSeats - filledSeats);
+    return { filledSeats, totalSeats, openSeats };
+}
+
+/**
  * Generates next VC-### code for vacancies (Section 8)
  */
 export function generateNextVacancyCode(existingCodes: string[]): string {

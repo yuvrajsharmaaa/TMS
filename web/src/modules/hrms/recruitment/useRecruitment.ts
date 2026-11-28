@@ -2,12 +2,10 @@ import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/api/useAuth";
-import { useLocations } from "@/hooks/api/useLocations";
 import { useUsers } from "@/hooks/api/useUsers";
 import {
     recruitmentRepository,
     SAMPLE_EMPLOYEES,
-    SAMPLE_LOCATIONS,
 } from "./repository";
 import type {
     ChangeVacancyStatusPayload,
@@ -40,12 +38,12 @@ export function useRecruitmentSnapshot() {
 }
 
 /**
- * Read-only reuse of Employee list & Location master (Section 3 Step 0 & Section 9),
+ * Read-only reuse of Employee list (Section 3 Step 0 & Section 9),
  * merged with sample fallback records so dropdowns always have rich valid choices.
+ * Note: Location is now a manual text input (no Location master dropdown dependency).
  */
 export function useRecruitmentMasterOptions() {
     const { data: liveUsers = [] } = useUsers();
-    const { data: liveLocations = [] } = useLocations();
 
     const employeeOptions = useMemo(() => {
         const names = new Set<string>();
@@ -86,21 +84,10 @@ export function useRecruitmentMasterOptions() {
         return Array.from(dirs);
     }, [liveUsers]);
 
-    const locationOptions = useMemo(() => {
-        const locs = new Set<string>(SAMPLE_LOCATIONS);
-        for (const l of liveLocations) {
-            if (l.name && l.name.trim()) {
-                locs.add(l.name.trim());
-            }
-        }
-        return Array.from(locs);
-    }, [liveLocations]);
-
     return {
         employeeOptions,
         hrOptions,
         directorOptions,
-        locationOptions,
     };
 }
 

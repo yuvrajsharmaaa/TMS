@@ -64,10 +64,9 @@ export interface Vacancy {
     vacancyCode: string; // VC-001 style
     position: string;
     functionName: VacancyFunction;
-    location: string | null;
+    location: string | null; // Manual text input
     startDate: string; // ISO YYYY-MM-DD
     totalVacancies: number;
-    remainingVacancies: number;
     reportingTo: string;
     salaryMin: number | null;
     salaryMax: number | null;
@@ -308,8 +307,8 @@ export interface Candidate {
     annualSalary: number | null;
     experience: number; // in years
     education: string | null;
-    currentLocation: string;
-    preferredLocation: string;
+    currentLocation: string; // Manual text input
+    preferredLocation: string; // Manual text input
     cvFileName: string | null;
     autoFilledFields?: string[];
     initialNote: string | null;
@@ -384,9 +383,7 @@ export interface CreateVacancyPayload {
     initialRemarks: string | null;
 }
 
-export interface UpdateVacancyPayload extends Partial<CreateVacancyPayload> {
-    remainingVacancies?: number;
-}
+export type UpdateVacancyPayload = Partial<CreateVacancyPayload>;
 
 export interface ChangeVacancyStatusPayload {
     vacancyId: string;

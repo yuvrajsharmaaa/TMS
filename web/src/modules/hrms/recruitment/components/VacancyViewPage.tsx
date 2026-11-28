@@ -20,6 +20,7 @@ import {
     calculateDaysOpen,
     formatDdMmYyyy,
     formatSalaryRangeDisplay,
+    getVacancySeatSummary,
 } from "../utils";
 import { ActivityLogList } from "./ActivityLogList";
 import { StatusPill } from "./StatusPill";
@@ -75,7 +76,10 @@ export function VacancyViewPage({
         return counts;
     }, [vacancyCandidates]);
 
-    const filledSeats = Math.max(0, vacancy.totalVacancies - vacancy.remainingVacancies);
+    const seatSummary = useMemo(
+        () => getVacancySeatSummary(vacancy, candidates),
+        [vacancy, candidates]
+    );
     const daysOpen = calculateDaysOpen(vacancy.startDate, vacancy.status);
     const canAddCandidate =
         canManage && vacancy.status === "Active" && vacancy.jdStatus === "Finalized";
@@ -154,14 +158,15 @@ export function VacancyViewPage({
                 )}
             </div>
 
-            {/* Section 8 Rule: A vacancy at 0 Remaining prompts HR to open Change Status and mark it Filled */}
-            {canManage && vacancy.remainingVacancies === 0 && vacancy.status !== "Filled" && (
+            {/* Section 8 Rule: A vacancy with all seats filled prompts HR to open Change Status and mark it Filled */}
+            {canManage && seatSummary.openSeats === 0 && vacancy.status !== "Filled" && (
                 <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="flex flex-wrap items-center justify-between gap-2">
                         <span>
-                            All seats for <strong>{vacancy.position}</strong> ({vacancy.vacancyCode})
-                            are filled (0 Remaining). Would you like to mark this vacancy as{" "}
+                            All seats for <strong>{vacancy.position}</strong> (
+                            {vacancy.vacancyCode}) are filled ({seatSummary.filledSeats} /{" "}
+                            {seatSummary.totalSeats}). Would you like to mark this vacancy as{" "}
                             <strong>Filled</strong>?
                         </span>
                         <Button
@@ -200,12 +205,11 @@ export function VacancyViewPage({
                             </div>
                         </div>
                         <div className="rounded-md border bg-muted/20 p-2.5">
-                            <div className="text-xs text-muted-foreground">Seats (Filled / Total)</div>
+                            <div className="text-xs text-muted-foreground">
+                                Seats (Filled / Total)
+                            </div>
                             <div className="mt-0.5 font-semibold tabular-nums">
-                                {filledSeats} / {vacancy.totalVacancies}{" "}
-                                <span className="text-xs font-normal text-muted-foreground">
-                                    ({vacancy.remainingVacancies} left)
-                                </span>
+                                {seatSummary.filledSeats} / {seatSummary.totalSeats}
                             </div>
                         </div>
                         <div className="rounded-md border bg-muted/20 p-2.5">

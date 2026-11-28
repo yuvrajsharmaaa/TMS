@@ -12,14 +12,8 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Combobox, type SelectOption } from "@/components/form/SelectField";
 import { useCurrentUser } from "@/hooks/api/useAuth";
 import { usePersistentTableState } from "@/hooks/usePersistentTableState";
 import { toast } from "sonner";
@@ -41,6 +35,7 @@ import {
     downloadRecruitmentCsv,
     formatDdMmYyyy,
     formatSalaryRangeDisplay,
+    getVacancySeatSummary,
     interpolateWhatsAppTemplate,
 } from "./utils";
 import { VacanciesTab } from "./components/VacanciesTab";
@@ -49,6 +44,13 @@ import {
     type VacancyDrawerState,
 } from "./components/VacancyDrawerForms";
 import { VacancyViewPage } from "./components/VacancyViewPage";
+
+const ROLE_OPTIONS: SelectOption[] = [
+    { id: "HR", name: "HR (Full Access)" },
+    { id: "Team Leader", name: "Team Leader" },
+    { id: "Director", name: "Director" },
+    { id: "Leadership", name: "Leadership (View Only)" },
+];
 
 export default function RecruitmentPage() {
     const { data: currentUser } = useCurrentUser();
@@ -92,11 +94,7 @@ export default function RecruitmentPage() {
     };
 
     const { data: snapshot, isLoading, error } = useRecruitmentSnapshot();
-    const {
-        employeeOptions,
-        hrOptions,
-        locationOptions,
-    } = useRecruitmentMasterOptions();
+    const { employeeOptions, hrOptions } = useRecruitmentMasterOptions();
     const mutations = useRecruitmentMutations();
 
     const [vacancyDrawer, setVacancyDrawer] = useState<VacancyDrawerState>({
@@ -126,10 +124,12 @@ export default function RecruitmentPage() {
         return map;
     }, [candidates]);
 
-    const handleRoleSwitch = (nextRole: RecruitmentRole) => {
-        setRecruitmentRoleOverride(nextRole);
-        setRoleOverrideState(nextRole);
-        toast.info(`Viewing Recruitment Module as ${nextRole}`);
+    const handleRoleSwitch = (nextRole: string) => {
+        if (!nextRole) return;
+        const typedRole = nextRole as RecruitmentRole;
+        setRecruitmentRoleOverride(typedRole);
+        setRoleOverrideState(typedRole);
+        toast.info(`Viewing Recruitment Module as ${typedRole}`);
     };
 
     const handleAddCandidateForVacancy = (vacancyId: string) => {
@@ -182,7 +182,11 @@ export default function RecruitmentPage() {
             recipient: candidate.contactNo,
             body: text,
         });
-        window.open(buildWaMeUrl(candidate.contactNo, text), "_blank", "noopener,noreferrer");
+        window.open(
+            buildWaMeUrl(candidate.contactNo, text),
+            "_blank",
+            "noopener,noreferrer"
+        );
     };
 
     const handleExportCsv = () => {
@@ -202,7 +206,6 @@ export default function RecruitmentPage() {
                     "Days Open",
                     "Filled Seats",
                     "Total Seats",
-                    "Remaining Seats",
                     "Reporting To",
                     "Salary Range",
                     "Candidates in Pipeline",
@@ -210,28 +213,30 @@ export default function RecruitmentPage() {
                     "JD Status",
                     "Assigned HR",
                 ],
-                rowsToExport.map(v => [
-                    v.vacancyCode,
-                    v.position,
-                    v.functionName,
-                    v.location || "",
-                    formatDdMmYyyy(v.startDate),
-                    calculateDaysOpen(v.startDate, v.status),
-                    Math.max(0, v.totalVacancies - v.remainingVacancies),
-                    v.totalVacancies,
-                    v.remainingVacancies,
-                    v.reportingTo,
-                    formatSalaryRangeDisplay(
-                        v.salaryMin,
-                        v.salaryMax,
-                        v.salaryPeriod,
-                        v.isSample
-                    ),
-                    candidateCountByVacancy.get(v.id) || 0,
-                    v.status,
-                    v.jdStatus,
-                    v.assignedHr || "Unassigned",
-                ])
+                rowsToExport.map(v => {
+                    const seatInfo = getVacancySeatSummary(v, candidates);
+                    return [
+                        v.vacancyCode,
+                        v.position,
+                        v.functionName,
+                        v.location || "",
+                        formatDdMmYyyy(v.startDate),
+                        calculateDaysOpen(v.startDate, v.status),
+                        seatInfo.filledSeats,
+                        seatInfo.totalSeats,
+                        v.reportingTo,
+                        formatSalaryRangeDisplay(
+                            v.salaryMin,
+                            v.salaryMax,
+                            v.salaryPeriod,
+                            v.isSample
+                        ),
+                        candidateCountByVacancy.get(v.id) || 0,
+                        v.status,
+                        v.jdStatus,
+                        v.assignedHr || "Unassigned",
+                    ];
+                })
             );
             toast.success(`Exported ${rowsToExport.length} vacancy rows to CSV`);
         } else {
@@ -263,9 +268,9 @@ export default function RecruitmentPage() {
             activeVacancies: vacancies.filter(v => v.status === "Active").length,
             onHoldVacancies: vacancies.filter(v => v.status === "On Hold").length,
             filledVacancies: vacancies.filter(v => v.status === "Filled").length,
-            openSeats: vacancies
+            totalSeats: vacancies
                 .filter(v => v.status === "Active")
-                .reduce((acc, v) => acc + v.remainingVacancies, 0),
+                .reduce((acc, v) => acc + v.totalVacancies, 0),
             activeCandidates: candidates.filter(c => !c.isClosed).length,
             joinedCandidates: candidates.filter(c => c.currentStatus === "Joined").length,
             referralsCount: referrals.length,
@@ -291,29 +296,17 @@ export default function RecruitmentPage() {
                 </CardDescription>
                 <CardAction>
                     <div className="flex flex-wrap items-center gap-2">
-                        {/* Role Switcher for testing Section 10 role permissions */}
-                        <div className="flex items-center gap-1.5 rounded-md border bg-muted/30 px-2 py-1">
-                            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-                            <span className="text-xs text-muted-foreground">Role:</span>
-                            <Select
-                                value={activeRole}
-                                onValueChange={v => handleRoleSwitch(v as RecruitmentRole)}
-                            >
-                                <SelectTrigger
-                                    className="h-7 w-32 border-0 bg-transparent px-1.5 text-xs font-semibold shadow-none"
-                                    aria-label="Active recruitment role"
-                                >
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="HR">HR (Full Access)</SelectItem>
-                                    <SelectItem value="Team Leader">Team Leader</SelectItem>
-                                    <SelectItem value="Director">Director</SelectItem>
-                                    <SelectItem value="Leadership">
-                                        Leadership (View Only)
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
+                        {/* Role Switcher using TenderForm Combobox component */}
+                        <div className="flex items-center gap-1.5">
+                            <ShieldCheck className="h-4 w-4 text-primary" />
+                            <div className="w-44">
+                                <Combobox
+                                    value={activeRole}
+                                    onChange={handleRoleSwitch}
+                                    options={ROLE_OPTIONS}
+                                    placeholder="Select Role"
+                                />
+                            </div>
                         </div>
 
                         <Button
@@ -373,9 +366,9 @@ export default function RecruitmentPage() {
                             </div>
                         </div>
                         <div className="rounded-md border bg-muted/30 p-2.5">
-                            <div className="text-xs text-muted-foreground">Open Seats</div>
+                            <div className="text-xs text-muted-foreground">Active Seats</div>
                             <div className="text-lg font-bold tabular-nums">
-                                {summaryTotals.openSeats}
+                                {summaryTotals.totalSeats}
                             </div>
                         </div>
                         <div className="rounded-md border bg-muted/30 p-2.5">
@@ -424,8 +417,8 @@ export default function RecruitmentPage() {
                         value="vacancies"
                         className="mt-3 data-[state=inactive]:hidden"
                     >
-                        {activeTab === "vacancies" && (
-                            selectedVacancy ? (
+                        {activeTab === "vacancies" &&
+                            (selectedVacancy ? (
                                 <VacancyViewPage
                                     vacancy={selectedVacancy}
                                     candidates={candidates}
@@ -451,9 +444,6 @@ export default function RecruitmentPage() {
                                     canManage={perms.canManageVacancies}
                                     search={search}
                                     onSearchChange={setSearch}
-                                    functionOptions={customFunctions}
-                                    employeeOptions={employeeOptions}
-                                    hrOptions={hrOptions}
                                     onSelectVacancy={id => setSelectedVacancyId(id)}
                                     onOpenDrawer={setVacancyDrawer}
                                     onAddCandidateForVacancy={handleAddCandidateForVacancy}
@@ -461,8 +451,7 @@ export default function RecruitmentPage() {
                                         filteredVacanciesRef.current = rows;
                                     }}
                                 />
-                            )
-                        )}
+                            ))}
                     </TabsContent>
 
                     {/* PLACEHOLDER TABS FOR PHASES 2, 3, AND 4 */}
@@ -495,7 +484,6 @@ export default function RecruitmentPage() {
                     vacancies={vacancies}
                     candidates={candidates}
                     functionOptions={customFunctions}
-                    locationOptions={locationOptions}
                     employeeOptions={employeeOptions}
                     hrOptions={hrOptions}
                     mutations={mutations}

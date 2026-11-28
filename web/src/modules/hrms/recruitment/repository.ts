@@ -43,11 +43,12 @@ import {
     deriveCandidateState,
     generateNextCandidateCode,
     generateNextVacancyCode,
+    getVacancySeatSummary,
     isPositionUniqueAmongOpenRoles,
     todayIsoDate,
 } from "./utils";
 
-const STORAGE_KEY = "recruitment:store:v1";
+const STORAGE_KEY = "recruitment:store:v2";
 
 export interface RecruitmentStoreSnapshot {
     vacancies: Vacancy[];
@@ -249,10 +250,9 @@ export class InMemoryRecruitmentRepository implements IRecruitmentRepository {
             vacancyCode,
             position: payload.position.trim(),
             functionName: payload.functionName,
-            location: payload.location || null,
+            location: payload.location ? payload.location.trim() : null,
             startDate: payload.startDate || todayIsoDate(),
             totalVacancies: payload.totalVacancies,
-            remainingVacancies: payload.totalVacancies,
             reportingTo: payload.reportingTo,
             salaryMin: payload.salaryMin,
             salaryMax: payload.salaryMax,
@@ -308,12 +308,7 @@ export class InMemoryRecruitmentRepository implements IRecruitmentRepository {
         }
 
         if (payload.totalVacancies !== undefined) {
-            const filledSeats = Math.max(
-                0,
-                vacancy.totalVacancies - vacancy.remainingVacancies
-            );
             vacancy.totalVacancies = payload.totalVacancies;
-            vacancy.remainingVacancies = Math.max(0, payload.totalVacancies - filledSeats);
         }
 
         if (payload.position !== undefined) vacancy.position = payload.position.trim();
@@ -323,7 +318,8 @@ export class InMemoryRecruitmentRepository implements IRecruitmentRepository {
                 this.state.customFunctions.push(payload.functionName);
             }
         }
-        if (payload.location !== undefined) vacancy.location = payload.location;
+        if (payload.location !== undefined)
+            vacancy.location = payload.location ? payload.location.trim() : null;
         if (payload.startDate !== undefined) vacancy.startDate = payload.startDate;
         if (payload.reportingTo !== undefined) vacancy.reportingTo = payload.reportingTo;
         if (payload.salaryMin !== undefined) vacancy.salaryMin = payload.salaryMin;
@@ -341,13 +337,14 @@ export class InMemoryRecruitmentRepository implements IRecruitmentRepository {
             }
         }
 
+        const seatSummary = getVacancySeatSummary(vacancy, this.state.candidates);
         vacancy.updatedAt = new Date().toISOString();
         vacancy.activityLog.unshift(
             createActivityLogEntry(
                 "vacancy",
                 vacancy.id,
                 authorName,
-                `Vacancy details updated (JD: ${vacancy.jdStatus}, Seats: ${vacancy.totalVacancies - vacancy.remainingVacancies}/${vacancy.totalVacancies}).`
+                `Vacancy details updated (JD: ${vacancy.jdStatus}, Seats: ${seatSummary.filledSeats}/${seatSummary.totalSeats}).`
             )
         );
 
@@ -366,13 +363,14 @@ export class InMemoryRecruitmentRepository implements IRecruitmentRepository {
             throw new Error("A reason is required when changing vacancy status.");
         }
 
+        const seatSummary = getVacancySeatSummary(vacancy, this.state.candidates);
         if (
             payload.newStatus === "Filled" &&
-            vacancy.remainingVacancies > 0 &&
+            seatSummary.openSeats > 0 &&
             (!payload.overrideFilledReason || !payload.overrideFilledReason.trim())
         ) {
             throw new Error(
-                `Vacancy still has ${vacancy.remainingVacancies} remaining seat(s). An override reason is required to mark it Filled.`
+                `Vacancy still has ${seatSummary.openSeats} unfilled seat(s). An override reason is required to mark it Filled.`
             );
         }
 
@@ -1120,16 +1118,16 @@ export class InMemoryRecruitmentRepository implements IRecruitmentRepository {
         };
 
         if (payload.joiningStatus === "Joined") {
-            // 1. Reduce vacancy Remaining seats by 1 if not already decremented (Section 6 Step 8)
+            // 1. Log seat filled on the vacancy
             if (vacancy && !wasAlreadyJoined) {
-                vacancy.remainingVacancies = Math.max(0, vacancy.remainingVacancies - 1);
+                const seatSummary = getVacancySeatSummary(vacancy, this.state.candidates);
                 vacancy.updatedAt = now;
                 vacancy.activityLog.unshift(
                     createActivityLogEntry(
                         "vacancy",
                         vacancy.id,
                         authorName,
-                        `Candidate ${candidate.candidateCode} (${candidate.candidateName}) joined. Remaining seats: ${vacancy.remainingVacancies}/${vacancy.totalVacancies}.`
+                        `Candidate ${candidate.candidateCode} (${candidate.candidateName}) joined. Filled seats: ${seatSummary.filledSeats}/${seatSummary.totalSeats}.`
                     )
                 );
             }
@@ -1182,20 +1180,15 @@ export class InMemoryRecruitmentRepository implements IRecruitmentRepository {
         } else if (payload.joiningStatus === "Did Not Join") {
             // Reopen the vacancy if seats remain (Section 6 Step 8)
             if (vacancy) {
-                if (wasAlreadyJoined) {
-                    vacancy.remainingVacancies = Math.min(
-                        vacancy.totalVacancies,
-                        vacancy.remainingVacancies + 1
-                    );
-                }
-                if (vacancy.remainingVacancies > 0 && vacancy.status === "Filled") {
+                const seatSummary = getVacancySeatSummary(vacancy, this.state.candidates);
+                if (seatSummary.openSeats > 0 && vacancy.status === "Filled") {
                     vacancy.status = "Active";
                     vacancy.activityLog.unshift(
                         createActivityLogEntry(
                             "vacancy",
                             vacancy.id,
                             authorName,
-                            `Vacancy automatically reopened to Active because ${candidate.candidateCode} Did Not Join and ${vacancy.remainingVacancies} seat(s) remain.`
+                            `Vacancy automatically reopened to Active because ${candidate.candidateCode} Did Not Join and ${seatSummary.openSeats} seat(s) are open.`
                         )
                     );
                 }
